@@ -2,23 +2,51 @@ import xml.etree.ElementTree as ET
 
 def parse_openmc_surface(surface):
     """Parse OpenMC surface and return salient information in the form of a dict (Gmsh points and lines)."""
-    surface_id = [str(surface.get('id'))]
-    surface_type = [str(surface.get('type'))]
+    surface_id = str(surface.get('id'))
+    surface_type = str(surface.get('type'))
     coeffs = [float(c) for c in surface.get('coeffs').split()]
+    #print (f"type: {surface_type}")
 
-    if surface_type == "plane":
-        a, b, c, d = coeffs
-        # Assuming only planar surfaces for simplicity (will definitely have to be more complex)
-        if a == 0 and b == 0:
-            # Vertical line
-            return [(d/c, -10), (d/c, 10)]
-        elif a == 0 and c == 0:
-            # Horizontal line
-            return [(-10, d/b), (10, d/b)]
-        else:
-            raise ValueError("Unsupported surface type")
-    elif surface_type == "sphere":
-        x0, y0, z0, r = coeffs
+    match surface_type:
+        #Planes:
+        case "plane":
+            a, b, c, d = coeffs
+            # Assuming only planar surfaces for simplicity (will definitely have to be more complex)
+            if a == 0 and b == 0:
+                # Vertical line
+                return [(d/c, -10), (d/c, 10)]
+            elif a == 0 and c == 0:
+                # Horizontal line
+                return [(-10, d/b), (10, d/b)]
+            else:
+                raise ValueError("Unsupported surface type")
+        #Spheres:
+        case "sphere":
+            x0, y0, z0, r = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r":r}
+        #Cones:
+        case "x-cone":
+            x0, y0, z0, r2 = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r2":r2}
+        case "y-cone":
+            x0, y0, z0, r2 = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r2":r2}
+        case "z-cone":
+            x0, y0, z0, r2 = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r2":r2}
+        #Cylinders:
+        case "x-cylinder":
+            x0, y0, z0, r2 = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r":r2}
+        case "y-cylinder":
+            x0, y0, z0, r2 = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r":r2}
+        case "z-cylinder":
+            x0, y0, z0, r2 = coeffs
+            return {"type":surface_type, "x0":x0, "y0":y0, "z0":z0, "r":r2}
+        #Default (Error) Case:
+        case _:
+            raise ValueError("Unsupported surface type (new)")
 
 
 
