@@ -71,4 +71,4 @@ def convert_to_gmsh(openmc_file, gmsh_file):
             f.write(f"Line({i}) = {{{line[0]}, {line[1]}}};\n")
 
 # Running the function
-convert_to_gmsh('/Users/webberqu417/Desktop/NERS/570/Project/simpleGeometry.xml', '/Users/webberqu417/Desktop/NERS/570/Project/convertedGeometry.geo')
+convert_to_gmsh('./simpleGeometry.xml', './convertedGeometry.geo')
