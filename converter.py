@@ -19,12 +19,18 @@ def convert_to_gmsh(openmc_file, gmsh_file):
     """Convert OpenMC geometry to Gmsh format."""
     try:
         tree = ET.parse(openmc_file)
+        root = tree.getroot()
+        # print(tree)
+
+        # for child in root:
+        #     print (child.tag, child.attrib)
+
     except ET.ParseError as e:
         print(f"Error parsing XML file: {e}")
         return
     root = tree.getroot()
 
-    geometry = root.find('geometry')
+    geometry = root
     if geometry is None:
         print("No <geometry> element found in the XML file.")
         return
