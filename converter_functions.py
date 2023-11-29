@@ -23,14 +23,14 @@ def find_intersection_line(plane_dict1, plane_dict2):
     #Check that the two planes are not parallel (i.e. non-intersecting):
     if not do_planes_intersect(plane_dict1, plane_dict2):
         print("Planes Do Not Intersect!")
-        return [0, 0, 0, 0, 0, 0]
+        return None
 
     direction_vector = np.cross(normal_vector1, normal_vector2)
 
     #Normalizing the line direction vector:
     direction_vector = direction_vector/np.linalg.norm(direction_vector)
 
-    print(direction_vector)
+    #print(direction_vector)
 
     if direction_vector[2] != 0:
         
@@ -88,7 +88,7 @@ def find_intersection_line(plane_dict1, plane_dict2):
 
     print(f"Point: ({x}, {y}, {z}), Direction: <{direction_vector[0]}, {direction_vector[1]}, {direction_vector[2]},>")
 
-    return [x, y, z, direction_vector[0], direction_vector[1], direction_vector[2]]
+    return {"x0":x, "y0":y, "z0":z, "alpha":direction_vector[0], "beta":direction_vector[1], "epsilon":direction_vector[2]}
 
 
 def do_planes_intersect(plane_dict1, plane_dict2):
@@ -207,13 +207,14 @@ def find_line_line_intersection_point(line_dict1, line_dict2):
     b = np.array([[x02 - x01], [y02 - y01], [z02 - z01]])
 
     t = np.linalg.lstsq(a,b,rcond=None)[0][0]
-    print(f"t = {t}")
+    #print(f"t = {t}")
 
     x = x01 + alpha1*t
     y = y01 + beta1*t
     z = z01 + epsilon1*t
 
-    print(f"Intersection point = ({x}, {y}, {z})")
+    #print(f"Intersection point = ({x}, {y}, {z})")
+    return [x, y, z]
 
 
 
@@ -226,7 +227,7 @@ def do_lines_intersect(line_dict1, line_dict2):
     #Vector form of a line:
     # Line = p + (Real Number)*v
 
-    tolerance = 1e-5
+    tolerance = 1e-9
 
     x01 = line_dict1["x0"]
     y01 = line_dict1["y0"]
@@ -245,7 +246,20 @@ def do_lines_intersect(line_dict1, line_dict2):
     p1 = np.array([x01, y01, z01])
     p2 = np.array([x02, y02, z02])
 
-    v1 = np.array([alpha1, beta1, epsilon1])
-    v2 = np.array([alpha2, beta2, epsilon2])
+    v1 = np.array([alpha1, beta1, epsilon1])/np.linalg.norm([alpha1, beta1, epsilon1])
+    v2 = np.array([alpha2, beta2, epsilon2])/np.linalg.norm([alpha2, beta2, epsilon2])
 
-    return (abs(np.dot(np.cross(v1, v2), (p1-p2))) < tolerance)
+    if np.allclose(abs(v1), abs(v2)): #Check for parallel lines (will not intersect)
+        return False
+    else:
+        return (abs(np.dot(np.cross(v1, v2), (p1-p2))) < tolerance)
+
+def is_point_within_bounds(x, y, z, xmin, xmax, ymin, ymax, zmin, zmax):
+
+    tolerance = 1e-5
+    
+    x_within_range = (x >= xmin-tolerance) and (x <= xmax+tolerance)
+    y_within_range = (y >= ymin-tolerance) and (y <= ymax+tolerance)
+    z_within_range = (z >= zmin-tolerance) and (z <= zmax+tolerance)
+    
+    return (x_within_range and y_within_range and z_within_range)
