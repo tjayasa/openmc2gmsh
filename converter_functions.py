@@ -1,17 +1,18 @@
 import numpy as np
+from converter_classes import *
 
-def find_intersection_line(plane_dict1, plane_dict2):
+def find_intersection_line(plane1, plane2):
     """Find the line of intersection between two planes."""
 
-    a1 = plane_dict1["a"]
-    b1 = plane_dict1["b"]
-    c1 = plane_dict1["c"]
-    d1 = plane_dict1["d"]
+    a1 = plane1.coeffs["a"]
+    b1 = plane1.coeffs["b"]
+    c1 = plane1.coeffs["c"]
+    d1 = plane1.coeffs["d"]
 
-    a2 = plane_dict2["a"]
-    b2 = plane_dict2["b"]
-    c2 = plane_dict2["c"]
-    d2 = plane_dict2["d"]
+    a2 = plane2.coeffs["a"]
+    b2 = plane2.coeffs["b"]
+    c2 = plane2.coeffs["c"]
+    d2 = plane2.coeffs["d"]
     
     normal_vector1 = np.array([a1, b1, c1])
     normal_vector2 = np.array([a2, b2, c2])
@@ -21,7 +22,7 @@ def find_intersection_line(plane_dict1, plane_dict2):
     normal_vector2 = normal_vector2/np.linalg.norm(normal_vector2)
 
     #Check that the two planes are not parallel (i.e. non-intersecting):
-    if not do_planes_intersect(plane_dict1, plane_dict2):
+    if not do_planes_intersect(plane1, plane2):
         print("Planes Do Not Intersect!")
         return None
 
@@ -88,10 +89,13 @@ def find_intersection_line(plane_dict1, plane_dict2):
 
     print(f"Point: ({x}, {y}, {z}), Direction: <{direction_vector[0]}, {direction_vector[1]}, {direction_vector[2]},>")
 
-    return {"x0":x, "y0":y, "z0":z, "alpha":direction_vector[0], "beta":direction_vector[1], "epsilon":direction_vector[2]}
+    intersection_line = line("straight")
+    intersection_line.setCoefficients(x, y, z, direction_vector[0], direction_vector[1], direction_vector[2])
+
+    return intersection_line
 
 
-def do_planes_intersect(plane_dict1, plane_dict2):
+def do_planes_intersect(plane1, plane2):
     #Parametric Form of 3D Line:
     # x = x0 + alpha*t
     # y = y0 + beta*t
@@ -100,13 +104,13 @@ def do_planes_intersect(plane_dict1, plane_dict2):
     #Equation of a Plane:
     # Ax + By + Cz = D
 
-    a1 = plane_dict1["a"]
-    b1 = plane_dict1["b"]
-    c1 = plane_dict1["c"]
+    a1 = plane1.coeffs["a"]
+    b1 = plane1.coeffs["b"]
+    c1 = plane1.coeffs["c"]
 
-    a2 = plane_dict2["a"]
-    b2 = plane_dict2["b"]
-    c2 = plane_dict2["c"]
+    a2 = plane2.coeffs["a"]
+    b2 = plane2.coeffs["b"]
+    c2 = plane2.coeffs["c"]
 
     normal_vector1 = np.array([a1, b1, c1])
     normal_vector2 = np.array([a2, b2, c2])
@@ -120,7 +124,7 @@ def do_planes_intersect(plane_dict1, plane_dict2):
 
     return (not np.allclose(normal_vector1, normal_vector2))
 
-def find_plane_line_intersection_point(plane_dict, line_dict):
+def find_plane_line_intersection_point(plane1, line1):
     #Parametric Form of 3D Line:
     # x = x0 + alpha*t
     # y = y0 + beta*t
@@ -129,19 +133,19 @@ def find_plane_line_intersection_point(plane_dict, line_dict):
     #Equation of a Plane:
     # Ax + By + Cz = D
 
-    x0 = line_dict["x0"]
-    y0 = line_dict["y0"]
-    z0 = line_dict["z0"]
-    alpha = line_dict["alpha"]
-    beta = line_dict["beta"]
-    epsilon = line_dict["epsilon"]
+    x0 = line1.coeffs["x0"]
+    y0 = line1.coeffs["y0"]
+    z0 = line1.coeffs["z0"]
+    alpha = line1.coeffs["alpha"]
+    beta = line1.coeffs["beta"]
+    epsilon = line1.coeffs["epsilon"]
 
-    a = plane_dict["a"]
-    b = plane_dict["b"]
-    c = plane_dict["c"]
-    d = plane_dict["d"]
+    a = plane1.coeffs["a"]
+    b = plane1.coeffs["b"]
+    c = plane1.coeffs["c"]
+    d = plane1.coeffs["d"]
 
-    if not does_line_intersect_plane(plane_dict, line_dict):
+    if not does_line_intersect_plane(plane1, line1):
         raise ValueError("Requested Line and Plane do not Intersect")
 
     t = (d - (a*x0) - (b*y0) - (c*z0))/((alpha*a) + (beta*b) + (epsilon*c))
@@ -150,9 +154,12 @@ def find_plane_line_intersection_point(plane_dict, line_dict):
     y = y0 + (beta*t)
     z = z0 + (epsilon*t)
 
+    intersection_point = point(x, y, z)
+    return intersection_point
+
     print(f"Point ({x}, {y}, {z})")
 
-def does_line_intersect_plane(plane_dict, line_dict):
+def does_line_intersect_plane(plane1, line1):
     #Parametric Form of 3D Line:
     # x = x0 + alpha*t
     # y = y0 + beta*t
@@ -161,13 +168,13 @@ def does_line_intersect_plane(plane_dict, line_dict):
     #Equation of a Plane:
     # Ax + By + Cz = D
 
-    alpha = line_dict["alpha"]
-    beta = line_dict["beta"]
-    epsilon = line_dict["epsilon"]
+    alpha = line1.coeffs["alpha"]
+    beta = line1.coeffs["beta"]
+    epsilon = line1.coeffs["epsilon"]
 
-    a = plane_dict["a"]
-    b = plane_dict["b"]
-    c = plane_dict["c"]
+    a = plane1.coeffs["a"]
+    b = plane1.coeffs["b"]
+    c = plane1.coeffs["c"]
 
     tolerance = 1e-5
 
@@ -175,7 +182,7 @@ def does_line_intersect_plane(plane_dict, line_dict):
 
     return(abs(np.dot(np.array([a, b, c]), np.array([alpha, beta, epsilon]))) > tolerance)
 
-def find_line_line_intersection_point(line_dict1, line_dict2):
+def find_line_line_intersection_point(line1, line2):
     #Parametric Form of 3D Line:
     # x = x0 + alpha*t
     # y = y0 + beta*t
@@ -183,19 +190,19 @@ def find_line_line_intersection_point(line_dict1, line_dict2):
 
     tolerance = 1e-5
 
-    x01 = line_dict1["x0"]
-    y01 = line_dict1["y0"]
-    z01 = line_dict1["z0"]
-    alpha1 = line_dict1["alpha"]
-    beta1 = line_dict1["beta"]
-    epsilon1 = line_dict1["epsilon"]
+    x01 = line1.coeffs["x0"]
+    y01 = line1.coeffs["y0"]
+    z01 = line1.coeffs["z0"]
+    alpha1 = line1.coeffs["alpha"]
+    beta1 = line1.coeffs["beta"]
+    epsilon1 = line1.coeffs["epsilon"]
 
-    x02 = line_dict2["x0"]
-    y02 = line_dict2["y0"]
-    z02 = line_dict2["z0"]
-    alpha2 = line_dict2["alpha"]
-    beta2 = line_dict2["beta"]
-    epsilon2 = line_dict2["epsilon"]
+    x02 = line2.coeffs["x0"]
+    y02 = line2.coeffs["y0"]
+    z02 = line2.coeffs["z0"]
+    alpha2 = line2.coeffs["alpha"]
+    beta2 = line2.coeffs["beta"]
+    epsilon2 = line2.coeffs["epsilon"]
 
     p1 = np.array([x01, y01, z01])
     p2 = np.array([x02, y02, z02])
@@ -213,12 +220,13 @@ def find_line_line_intersection_point(line_dict1, line_dict2):
     y = y01 + beta1*t
     z = z01 + epsilon1*t
 
+    intersection_point = point(x, y, z)
     #print(f"Intersection point = ({x}, {y}, {z})")
-    return [x, y, z]
+    return intersection_point
 
 
 
-def do_lines_intersect(line_dict1, line_dict2):
+def do_lines_intersect(line1, line2):
     #Parametric Form of 3D Line:
     # x = x0 + alpha*t
     # y = y0 + beta*t
@@ -227,21 +235,21 @@ def do_lines_intersect(line_dict1, line_dict2):
     #Vector form of a line:
     # Line = p + (Real Number)*v
 
-    tolerance = 1e-9
+    tolerance = 1e-5
 
-    x01 = line_dict1["x0"]
-    y01 = line_dict1["y0"]
-    z01 = line_dict1["z0"]
-    alpha1 = line_dict1["alpha"]
-    beta1 = line_dict1["beta"]
-    epsilon1 = line_dict1["epsilon"]
+    x01 = line1.coeffs["x0"]
+    y01 = line1.coeffs["y0"]
+    z01 = line1.coeffs["z0"]
+    alpha1 = line1.coeffs["alpha"]
+    beta1 = line1.coeffs["beta"]
+    epsilon1 = line1.coeffs["epsilon"]
 
-    x02 = line_dict2["x0"]
-    y02 = line_dict2["y0"]
-    z02 = line_dict2["z0"]
-    alpha2 = line_dict2["alpha"]
-    beta2 = line_dict2["beta"]
-    epsilon2 = line_dict2["epsilon"]
+    x02 = line2.coeffs["x0"]
+    y02 = line2.coeffs["y0"]
+    z02 = line2.coeffs["z0"]
+    alpha2 = line2.coeffs["alpha"]
+    beta2 = line2.coeffs["beta"]
+    epsilon2 = line2.coeffs["epsilon"]
 
     p1 = np.array([x01, y01, z01])
     p2 = np.array([x02, y02, z02])
@@ -254,12 +262,14 @@ def do_lines_intersect(line_dict1, line_dict2):
     else:
         return (abs(np.dot(np.cross(v1, v2), (p1-p2))) < tolerance)
 
-def is_point_within_bounds(x, y, z, xmin, xmax, ymin, ymax, zmin, zmax):
+def is_point_within_bounds(input_point, xmin, xmax, ymin, ymax, zmin, zmax):
 
     tolerance = 1e-5
     
-    x_within_range = (x >= xmin-tolerance) and (x <= xmax+tolerance)
-    y_within_range = (y >= ymin-tolerance) and (y <= ymax+tolerance)
-    z_within_range = (z >= zmin-tolerance) and (z <= zmax+tolerance)
+    x_within_range = (input_point.x >= xmin-tolerance) and (input_point.x  <= xmax+tolerance)
+    y_within_range = (input_point.y  >= ymin-tolerance) and (input_point.y  <= ymax+tolerance)
+    z_within_range = (input_point.z  >= zmin-tolerance) and (input_point.z  <= zmax+tolerance)
     
     return (x_within_range and y_within_range and z_within_range)
+
+#def find_bounding_points(plane1):

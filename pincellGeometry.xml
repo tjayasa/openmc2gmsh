@@ -11,4 +11,5 @@
   <surface boundary="reflective" coeffs="0.63" id="7" type="x-plane" />
   <surface boundary="reflective" coeffs="-0.63" id="8" type="y-plane" />
   <surface boundary="reflective" coeffs="0.63" id="9" type="y-plane" />
+  <surface coeffs="0.63" id="10" type="y-plane" />
 </geometry>
