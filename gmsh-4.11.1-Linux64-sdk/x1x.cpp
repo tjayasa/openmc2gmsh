@@ -55,6 +55,17 @@ std::vector<int> getNumEnt(std::string filename, int xdim){
 
 }
 
+void viewGeo(std::string filename){
+
+	gmsh::initialize();
+        gmsh::open(filename);
+
+	gmsh::fltk::run();
+
+	gmsh::clear();
+        gmsh::finalize();
+}
+
 std::pair<int,int> getMinMax(std::vector<int> entvec){
 
 	int vmin = -1;
@@ -123,6 +134,28 @@ std::string fnameMod(std::string filename){
         filenameMod.append(geo);
 
 	return filenameMod;
+}
+
+
+std::string fnameMerge(std::string filename1, std::string filename2, bool isInv){
+
+        std::string merge;
+	if(isInv == false){
+       		merge = "_merge";
+	}
+	else{
+		merge = "mergeInv";
+	}
+        std::string geo = ".geo";
+        std::string filenameMerge;
+
+        filenameMerge.append(filename1.begin(),filename1.end()-4);
+	filenameMerge.append("_");
+	filenameMerge.append(filename2.begin(),filename2.end()-4);
+        filenameMerge.append(merge);
+        filenameMerge.append(geo);
+
+        return filenameMerge;
 }
 
 
@@ -235,6 +268,189 @@ void printBolIntSurf(std::string filename, std::vector<int> entvecSurf, int numk
 
 }
 
+void printTranDup(std::string filename, std::vector<int> entvecVol){
+
+	std::string trdu1 = "Translate {0, 0, 0} { Duplicata{ Volume{";
+	std::string trdu2 = "}; } }";
+	std::string del1 = "Delete{ Volume{";
+	std::string del2 = "};}";
+
+
+	std::ofstream outputMod;
+        outputMod.open(fnameMod(filename), std::ios_base::app);
+
+	for(auto t : entvecVol) {
+
+                        
+                outputMod << trdu1 << t << trdu2 << std::endl;
+		outputMod << del1 << t << del2 << std::endl;
+
+
+        }
+
+
+        outputMod.close();
+
+}
+
+
+
+
+std::vector<int> addNonDup(std::vector<int> vecall, std::vector<int> vecexc){
+
+	std::vector<int> vecunq;
+	int countnoteq;
+
+	std::cout << "vecall vals:" << std::endl;
+	for(auto tall1 : vecall){
+
+		std::cout << tall1 << std::endl;
+
+	}
+
+	std::cout << "vecexc vals:" << std::endl;
+	for(auto texc1 : vecexc){
+
+		std::cout << texc1 << std::endl;
+
+	}
+
+	std::cout << "vecunq fill fcn:" << std::endl;
+	for(auto tall : vecall){
+
+		countnoteq = 0;
+
+                for(auto texc : vecexc){
+
+               		std::cout << tall << "," << texc << std::endl;
+			if(tall != texc){
+				countnoteq = countnoteq + 1;
+			}
+
+        	}
+
+		std::cout << "countnoteq:" << countnoteq << std::endl;
+		std::cout << "vecexc size:" << vecexc.size() << std::endl;
+		if(countnoteq == vecexc.size()){
+			vecunq.push_back(tall);
+		}
+
+        }
+
+	std::cout << "vecunq vals:" << std::endl;
+        for(auto tunq1 : vecunq){
+
+                std::cout << tunq1 << std::endl;
+
+        }
+
+
+	return vecunq;
+
+}
+
+
+void printMerge(std::string filename1, std::string filename2, std::vector<int> ev3_1, std::vector<int> ev3_2, bool isInv){
+
+        std::ofstream outputMod(fnameMerge(filename1,filename2, isInv));
+
+        outputMod << "SetFactory(\"OpenCASCADE\");" << std::endl;
+        outputMod << "Mesh.CharacteristicLengthMax = " << meshSize << ";" << std::endl;
+        outputMod << "Mesh.CharacteristicLengthMin = " << meshSize << ";" << std::endl;
+        outputMod << "Merge \"" << fnameMod(filename2) << "\";" << std::endl;
+	outputMod << "Merge \"" << filename1 << "\";" << std::endl;
+
+	outputMod.close();
+
+	int max1 = getMinMax(ev3_1).second;
+	int max2 = getMinMax(ev3_2).second;
+
+	int tag_diff = max1 + max2 + 1;
+
+	std::vector<int> ev3_Merge = getNumEnt(fnameMerge(filename1,filename2, isInv),3);
+	std::vector<int> ev3_1M = addNonDup(ev3_Merge,ev3_2);
+
+	//for(auto t3: ev3_Merge){
+
+	//	std::cout << t3 << std::endl;
+
+	//}
+
+	//int idk = 1;
+
+	//for(auto t3 : ev3_Merge){
+
+
+		//for(auto t2M : ev3_2){
+
+			//std::cout << t3 << " , " << t2M << std::endl;
+
+			//if(t3 == t2M){
+
+			  // std::cout << "hit" << std::endl;			   
+			   //idk == 0;
+
+			   //std::cout << "in if,idk=" << idk << std::endl;	   
+
+			//}
+
+			//std::cout << "out if,idk=" << idk << std::endl;
+
+		//}
+                
+		//if(idk == 1){
+
+			//ev3_1M.push_back(t3);
+
+
+		//}
+
+        //}
+	
+	outputMod.open(fnameMerge(filename1,filename2, isInv), std::ios_base::app);
+
+	std::string bldif1 = "BooleanDifference(";
+	std::string bldif2 = ") = { Volume{";
+	std::string bldif3 = "}; Delete; }{ Volume{";
+	std::string bldif4 = "}; Delete; };";
+
+	outputMod << bldif1 << tag_diff << bldif2;
+
+	int i1 = 1;
+	int i2 = 1;
+
+	for(auto t1 : ev3_1M){
+
+		if(i1 > 1){
+			outputMod << ",";
+		}
+
+		outputMod << t1;
+
+		i1 = i1+1;
+
+	}
+
+	outputMod << bldif3;
+
+	for(auto t2 : ev3_2){
+
+                if(i2 > 1){
+                        outputMod << ",";
+                }
+
+                outputMod << t2;
+
+                i2 = i2+1;
+
+        }
+
+	outputMod << bldif4 << std::endl;
+
+        outputMod.close();
+
+}
+
 
 
 int main(int argc, char **argv)
@@ -252,6 +468,8 @@ int main(int argc, char **argv)
 
   std::string filename1 = argv[1];
   std::string filename2 = argv[2];
+
+  //viewGeo(filename1);
 
   //std::cout << filename << std::endl;
 
@@ -330,12 +548,14 @@ int main(int argc, char **argv)
 
 	std::cout << "Volume overlap found" << std::endl;
 	printBolIntVol(filename2,ev3_2,1);
+	//printTranDup(filename2,ev3_2);
 
   }
 
   std::vector<int> ev0_2mod = getNumEnt(fnameMod(filename2),0);
   std::vector<int> ev1_2mod = getNumEnt(fnameMod(filename2),1);
   std::vector<int> ev2_2mod = getNumEnt(fnameMod(filename2),2);
+  std::vector<int> ev3_2mod = getNumEnt(fnameMod(filename2),3);
 
   std::vector<int> ev2_2mod_hold = ev2_2mod;
 
@@ -362,6 +582,16 @@ int main(int argc, char **argv)
 	std::cout << "S Range: 1: (" << getMinMax(ev2_1).first << "," << getMinMax(ev2_1).second << ") 2: (" << getMinMax(ev2_2mod).first << "," << getMinMax(ev2_2mod).second << ")" << std::endl << std::endl;
 
   }
+
+  std::cout << fnameMerge(filename1,filename2,false) << std::endl;
+
+  printMerge(filename1,filename2,ev3_1,ev3_2mod,false);
+
+  viewGeo(fnameMerge(filename1,filename2,false));
+
+  //const char * cmerge = fnameMerge(filename1,filename2,false).c_str();
+
+  //std::remove(cmerge);
 
   //printBolIntSurf(filename,getNumEnt(filename,2),1);
 
