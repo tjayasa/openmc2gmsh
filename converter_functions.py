@@ -272,4 +272,67 @@ def is_point_within_bounds(input_point, xmin, xmax, ymin, ymax, zmin, zmax):
     
     return (x_within_range and y_within_range and z_within_range)
 
+def find_plane_bounding_points(plane1, top_boundary, bottom_boundary, front_boundary, back_boundary, right_boundary, left_boundary):
+
+    xmin = left_boundary.coeffs["d"]
+    xmax = right_boundary.coeffs["d"]
+    ymin = back_boundary.coeffs["d"]
+    ymax = front_boundary.coeffs["d"]
+    zmin = bottom_boundary.coeffs["d"]
+    zmax = top_boundary.coeffs["d"]
+
+    list_of_boundaries = [top_boundary, bottom_boundary, front_boundary, back_boundary, left_boundary, right_boundary]
+
+
+    list_of_intersects = []
+    list_intersect_nums = []
+    bounding_points = []
+
+    for i in range(0,6):
+        intersect =  find_intersection_line(plane1, list_of_boundaries[i])
+        if intersect is not None:
+            list_of_intersects.append(intersect)
+
+    i = 0
+    print(len(list_of_intersects))
+
+    for index1 in range(0,len(list_of_intersects)):
+        for index2 in range(index1+1,len(list_of_intersects)):
+
+            if do_lines_intersect(list_of_intersects[index1], list_of_intersects[index2]):
+
+                point = find_line_line_intersection_point(list_of_intersects[index1], list_of_intersects[index2])
+                #print (f"Lines {index1} and {index2} intersect.")
+
+                if is_point_within_bounds(point, xmin, xmax, ymin, ymax, zmin, zmax):
+
+                    print (f"Lines {index1} and {index2} intersect in bounds.")
+                    #print(f"Intersection Point ({point.x}, {point.y}, {point.z}) is within bounds")
+                    bounding_points.append(point)
+
+                    if list_of_intersects[index1].gmsh_id not in plane1.boundingLineIDs:
+                        plane1.addBoundingLine(list_of_intersects[index1])
+
+                    if list_of_intersects[index2].gmsh_id not in plane1.boundingLineIDs:
+                        plane1.addBoundingLine(list_of_intersects[index2])
+
+                    list_intersect_nums.append(index2)
+
+                    list_of_intersects[index1].addBoundingPoint(point)
+                    list_of_intersects[index2].addBoundingPoint(point)
+                
+            #i = i+1
+
+
+    for point in bounding_points:
+        print(f"Point({point.gmsh_id}) = {'{'} {round(float(point.x), 5)}, {round(float(point.y), 5)}, {round(float(point.z), 5)}{'}'};")
+
+    for line in plane1.boundingLines:
+        print(f"Line({line.gmsh_id}) = {'{'} {line.boundingPoints[0].gmsh_id}, {line.boundingPoints[1].gmsh_id}{'}'};")
+
+    print(len(plane1.boundingLines))
+    print(plane1.boundingLineIDs)
+
+#def write_gmsh_reprsentation(input_surface, dimensionality)
+
 #def find_bounding_points(plane1):
