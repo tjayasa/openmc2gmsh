@@ -84,7 +84,8 @@ def parse_openmc_surface(surface):
         #Quadrics
         case "quadric":
             # Extract the coefficients for the general quadric equation
-            A, B, C, D, E, F, G, H, J, K = coeffs
+            # coefficients D, E, and F are unused so replaced with _
+            A, B, C, _, _, _, G, H, J, K = coeffs
             # Convert the general quadric coefficients to ellipsoid parameters
             # Assuming the ellipsoid is centered at (x0, y0, z0) and has semi-axes lengths a, b, c
             x0 = -G / (2 * A)
