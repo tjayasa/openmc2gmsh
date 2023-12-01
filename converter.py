@@ -66,6 +66,35 @@ def parse_openmc_surface(surface):
         case "z-cylinder":
             x0, y0, r = coeffs
             return {"type":surface_type, "id":surface_id, "x0":x0, "y0":y0, "r":r}
+        
+        #Tori
+        case "x-torus":
+            x0, y0, z0, B, C = coeffs
+            A = np.sqrt(C + B**2)
+            return {"type": "x-torus", "center": [x0, y0, z0], "major_radius": A, "minor_radius": B}
+        case "y-torus":
+            x0, y0, z0, B, C = coeffs
+            A = np.sqrt(C + B**2)
+            return {"type": "y-torus", "center": [x0, y0, z0], "major_radius": A, "minor_radius": B}
+        case "z-torus":
+            x0, y0, z0, B, C = coeffs
+            A = np.sqrt(C + B**2)
+            return {"type": "z-torus", "center": [x0, y0, z0], "major_radius": A, "minor_radius": B}
+        
+        #Quadrics
+        case "quadric":
+            # Extract the coefficients for the general quadric equation
+            A, B, C, D, E, F, G, H, J, K = coeffs
+            # Convert the general quadric coefficients to ellipsoid parameters
+            # Assuming the ellipsoid is centered at (x0, y0, z0) and has semi-axes lengths a, b, c
+            x0 = -G / (2 * A)
+            y0 = -H / (2 * B)
+            z0 = -J / (2 * C)
+            a = np.sqrt(-K / A + x0**2)
+            b = np.sqrt(-K / B + y0**2)
+            c = np.sqrt(-K / C + z0**2)
+            return {"type": "ellipsoid", "center": [x0, y0, z0], "semi_axes": [a, b, c]}
+        
         #Default (Error) Case:
         case _:
             raise ValueError("Unsupported surface type (new)")
@@ -143,6 +172,36 @@ def convert_to_gmsh(openmc_file, gmsh_file, dimensionality):
                     #case "x-cone":
                     #    print ("XCone Encountered!")
                     #    f.write(f"Cylinder({surface_dict['id']}) = {surface_dict['x0']}, {surface_dict['y0']}, {surface_dict['z0']}, 1, 0, 0, {surface_dict['r']};\n")
+                    
+                    case "x-torus":
+                        torus_data = surface_obj
+                        # Gmsh doesn't directly support x-torus; it supports z-torus. 
+                        # So, rotate the torus about the Y-axis by 90 degrees to align the Z-torus along the X-axis.
+                        f.write(f"Translate {{0, 0, {torus_data['center'][0]}}} {{\n")
+                        f.write(f"  Rotate {{0, 90, 0}} {{\n")
+                        f.write(f"    Torus({{0, 0, 0}}, {torus_data['major_radius']}, {torus_data['minor_radius']});\n")
+                        f.write(f"  }}\n")
+                        f.write(f"}}\n")
+                    case "y-torus":
+                        torus_data = surface_obj
+                        # Rotate the torus about the X-axis by 90 degrees to align the Z-torus along the Y-axis.
+                        f.write(f"Translate {{0, 0, {torus_data['center'][1]}}} {{\n")
+                        f.write(f"  Rotate {{90, 0, 0}} {{\n")
+                        f.write(f"    Torus({{0, 0, 0}}, {torus_data['major_radius']}, {torus_data['minor_radius']});\n")
+                        f.write(f"  }}\n")
+                        f.write(f"}}\n")
+                    case "z-torus":
+                        torus_data = surface_obj
+                        # Z-torus is directly supported in Gmsh.
+                        f.write(f"Torus({torus_data['center'][0]}, {torus_data['center'][1]}, {torus_data['center'][2]}, {torus_data['major_radius']}, {torus_data['minor_radius']});\n")
+
+                    case "quadric":
+                        ellipsoid_data = surface_obj
+                        if ellipsoid_data["type"] == "ellipsoid":
+                            center = ellipsoid_data["center"]
+                            semi_axes = ellipsoid_data["semi_axes"]
+                            f.write(f"Ellipsoid({center[0]}, {center[1]}, {center[2]}, {semi_axes[0]}, {semi_axes[1]}, {semi_axes[2]});\n")
+
                     case _:
                         print("Unimplemented Surface Encountered!")
                 #for point in line_points:
