@@ -85,4 +85,4 @@ def convert_to_gmsh(openmc_file, gmsh_file):
 
 
 # Running the function
-convert_to_gmsh('/Users/webberqu417/Desktop/NERS/570/Project/simplePlane.xml', '/Users/webberqu417/Desktop/NERS/570/Project/convertedGeometry.geo')
+convert_to_gmsh('/Users/webberqu417/Desktop/NERS/570/Project/simpleQuadric.xml', '/Users/webberqu417/Desktop/NERS/570/Project/convertedQuadric.geo')
