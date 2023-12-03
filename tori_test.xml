@@ -1,0 +1,10 @@
+<geometry>
+    <!-- Example of an X-Torus -->
+    <surface id="1" type="x-torus" boundary="transmission" coeffs="1.0, 2.0, 3.0, 4.0, 5.0" />
+
+    <!-- Example of a Y-Torus -->
+    <surface id="2" type="y-torus" boundary="transmission" coeffs="2.0, 3.0, 4.0, 5.0, 6.0" />
+
+    <!-- Example of a Z-Torus -->
+    <surface id="3" type="z-torus" boundary="transmission" coeffs="3.0, 4.0, 5.0, 6.0, 7.0" />
+</geometry>

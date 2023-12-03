@@ -340,3 +340,6 @@ print(len(plane1.boundingLines))
 # Running the function
 #convert_to_gmsh('./pincellGeometry.xml', './convertedPincellGeometry.geo', 2)
 #convert_to_gmsh('./simpleGeometry.xml', './convertedGeometry.geo', 3)
+
+convert_to_gmsh('tori_test.xml', 'tori_test.geo', 3)
+#convert_to_gmsh('quadric_test.xml', 'quadric_test.geo', 3)
