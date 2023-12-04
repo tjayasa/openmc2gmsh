@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
 <geometry>
     <!-- Example of a Z-Torus -->
-    <surface id="1" type="x-torus" coeffs="5.0 2.0 0.0 0.0 0.0" />
+    <surface id="1" type="z-torus" coeffs="5.0 2.0 0.0 0.0 0.0" />
 </geometry>
