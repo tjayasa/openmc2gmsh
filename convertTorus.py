@@ -27,10 +27,10 @@ def convert_torus_to_gmsh(xml_file, geo_file):
                 # Apply rotation if necessary
                 if surface_type == 'x-torus':
                     # Rotate 90 degrees about the Y-axis to align with the X-axis
-                    f.write("Rotate {{0, 1, 0}, {0, 0, 0}, Pi/2} { Duplicata { Volume{1}; } };\n")
+                    f.write("Rotate {{0, 1, 0}, {0, 0, 0}, Pi/2} { Duplicate { Volume{1}; } };\n")
                 elif surface_type == 'y-torus':
                     # Rotate -90 degrees about the X-axis to align with the Y-axis
-                    f.write("Rotate {{1, 0, 0}, {0, 0, 0}, -Pi/2} { Duplicata { Volume{1}; } };\n")
+                    f.write("Rotate {{1, 0, 0}, {0, 0, 0}, -Pi/2} { Duplicate { Volume{1}; } };\n")
 
                 # Add mesh settings
                 f.write("Mesh.CharacteristicLengthMin = 0.1;\n")
