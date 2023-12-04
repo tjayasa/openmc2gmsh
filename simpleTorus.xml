@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
 <geometry>
-    <cell id="1" material="void" region="-1" />
-    <surface id="1" type="torus" coeffs="5.0 10.0 0.0 0.0 0.0 0.0"/>
+    <!-- Example of a Z-Torus -->
+    <surface id="1" type="x-torus" coeffs="5.0 2.0 0.0 0.0 0.0" />
 </geometry>

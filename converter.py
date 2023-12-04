@@ -30,12 +30,29 @@ def parse_openmc_quadric(surface):
 
 def parse_openmc_torus(surface):
     """Parse OpenMC torus and return Gmsh command."""
-    coeffs = [float(c) for c in surface.get('coeffs').split()]
-    # Assuming coeffs represent [inner radius, outer radius, center_x, center_y, center_z, ...]
-    inner_radius, outer_radius, center_x, center_y, center_z = coeffs[:5]
+    # Extract the 'coeffs' attribute and split by spaces
+    coeffs_str = surface.get('coeffs').strip()  # Strip any whitespace from the ends
+    coeffs = [float(c) for c in coeffs_str.split() if c]
 
-    # This is a placeholder syntax; adjust according to Gmsh's torus definition
-    return f"Torus({{{center_x}, {center_y}, {center_z}}}, {inner_radius}, {outer_radius});"
+    # Assuming coeffs represent [outer radius, inner radius, center_x, center_y, center_z, ...]
+    # For a torus in Gmsh, the first radius is the major (outer) radius (R)
+    # and the second radius is the minor (inner) radius (r)
+    R, r, center_x, center_y, center_z = coeffs[:5]
+
+    # Set the default axis of rotation (for z-torus)
+    axis_of_rotation = "{0, 0, 1}"
+
+    # Adjust axis of rotation for x-torus or y-torus
+    # OpenMC uses 'x-torus', 'y-torus', 'z-torus' to define the axis of symmetry
+    # Gmsh, however, always assumes the torus is symmetrical around the z-axis
+    # If the torus is symmetrical around another axis, it requires a rotation
+    # However, in this case, Gmsh does not natively support direct rotations of primitives like torus
+    # Therefore, if OpenMC specifies an x-torus or y-torus, you might need to use Gmsh's
+    # extrude or rotate commands to manually rotate the torus from the z-axis to the desired axis
+
+    # Gmsh torus syntax: Torus(tag) = {x, y, z, R, r};
+    # Assuming a full torus by default, so we do not include angle1 and angle2
+    return f"Torus({{{center_x}, {center_y}, {center_z}}}, {R}, {r});\n"
 
 def convert_to_gmsh(openmc_file, gmsh_file):
     """Convert OpenMC geometry to Gmsh format."""
@@ -54,7 +71,7 @@ def convert_to_gmsh(openmc_file, gmsh_file):
     for surface in root.findall('surface'):
         surface_type = surface.get('type')
         try:
-            if surface_type == 'plane':
+            if surface_type in ['plane', 'x-plane', 'y-plane', 'z-plane']:
                 line_points = parse_openmc_plane(surface)
                 line = []
                 for point in line_points:
@@ -62,7 +79,7 @@ def convert_to_gmsh(openmc_file, gmsh_file):
                         points[point] = len(points) + 1
                     line.append(points[point])
                 lines.append(tuple(line))
-            elif surface_type == 'torus':
+            elif surface_type in ['torus', 'x-torus', 'y-torus', 'z-torus']:
                 torus_data = parse_openmc_torus(surface)
                 other_geometries.append(torus_data)
             # Add more elif blocks for other types
@@ -81,8 +98,7 @@ def convert_to_gmsh(openmc_file, gmsh_file):
         for i, line in enumerate(lines, 1):
             f.write(f"Line({i}) = {{{line[0]}, {line[1]}}};\n")
         for geometry in other_geometries:
-            f.write(f"{geometry}\n")  # Write other geometries like tori
-
+            f.write(geometry)  # Write other geometries like tori
 
 # Running the function
-convert_to_gmsh('/Users/webberqu417/Desktop/NERS/570/Project/simpleQuadric.xml', '/Users/webberqu417/Desktop/NERS/570/Project/convertedQuadric.geo')
+convert_to_gmsh('simpleTorus.xml', 'convertedTorus.geo')
