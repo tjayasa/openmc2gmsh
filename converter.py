@@ -3,100 +3,16 @@ import numpy as np
 from converter_functions import *
 from converter_classes import *
 
-def parse_openmc_surface(xml_surface):
-    """Parse OpenMC surface and return salient information in the form of a dict (Gmsh points and lines)."""
-    surface_id = str(xml_surface.get('id'))
-    surface_type = str(xml_surface.get('type'))
-    boundary_type = str(xml_surface.get('boundary'))
-    coeffs = [float(c) for c in xml_surface.get('coeffs').split()]
-    #print (f"type: {surface_type}")
-
-    match surface_type:
-        #Planes:
-        case "x-plane":
-            x0 = coeffs
-            new_surface = surface("plane")
-            new_surface.setCoefficients(1, 0, 0, x0)
-            return new_surface
-        case "y-plane":
-            y0 = coeffs
-            new_surface = surface("plane")
-            new_surface.setCoefficients(0, 1, 0, y0)
-            return new_surface
-        case "z-plane":
-            z0 = coeffs
-            new_surface = surface("plane")
-            new_surface.setCoefficients(0, 0, 1, z0)
-            return new_surface
-        case "plane":
-            a, b, c, d = coeffs
-            new_surface = surface("plane")
-            new_surface.setCoefficients(a, b, c, d)
-            return new_surface
-            # Assuming only planar surfaces for simplicity (will definitely have to be more complex)
-            #if a == 0 and b == 0:
-                # Vertical line
-                #return [(d/c, -10), (d/c, 10)]
-            #elif a == 0 and c == 0:
-                # Horizontal line
-                #return [(-10, d/b), (10, d/b)]
-            #else:
-                #raise ValueError("Unsupported surface type")
-        #Spheres:
-        case "sphere":
-            x0, y0, z0, r = coeffs
-            new_surface = surface("sphere")
-            #return {"type":surface_type, "id":surface_id, "x0":x0, "y0":y0, "z0":z0, "r":r}
-            return new_surface
-        #Cones:
-        case "x-cone":
-            x0, y0, z0, r2 = coeffs
-            new_surface = surface("x-cone")
-            #return {"type":surface_type, "id":surface_id, "x0":x0, "y0":y0, "z0":z0, "r2":r2}
-            return new_surface
-        case "y-cone":
-            x0, y0, z0, r2 = coeffs
-            new_surface = surface("y-cone")
-            #return {"type":surface_type, "id":surface_id, "x0":x0, "y0":y0, "z0":z0, "r2":r2}
-            return new_surface
-        case "z-cone":
-            x0, y0, z0, r2 = coeffs
-            new_surface = surface("z-cone")
-            #return {"type":surface_type, "id":surface_id, "x0":x0, "y0":y0, "z0":z0, "r2":r2}
-            return new_surface
-        #Cylinders:
-        case "x-cylinder":
-            y0, z0, r = coeffs
-            new_surface = surface("x-cylinder")
-            #return {"type":surface_type, "id":surface_id, "y0":y0, "z0":z0, "r":r}
-            return new_surface
-        case "y-cylinder":
-            x0, z0, r = coeffs
-            new_surface = surface("y-cylinder")
-            #return {"type":surface_type, "id":surface_id, "x0":x0, "z0":z0, "r":r}
-            return new_surface
-        case "z-cylinder":
-            x0, y0, r = coeffs
-            new_surface = surface("z-cylinder")
-            #return {"type":surface_type, "id":surface_id, "x0":x0, "y0":y0, "r":r}
-            return new_surface
-        #Default (Error) Case:
-        case _:
-            raise ValueError("Unsupported surface type (new)")
-
-def convert_to_gmsh(openmc_file, gmsh_file, dimensionality):
+def convert_to_gmsh(openmc_file, gmsh_file, dimensionality, extrudedLength=None):
     """Convert OpenMC geometry to Gmsh format."""
 
-    #Setting up variables:
-    is_3d = (dimensionality == 3)
+    print(f"Beginning {dimensionality}D Conversion of {openmc_file}:")
+
+    global id_counter
 
     try:
         tree = ET.parse(openmc_file)
         root = tree.getroot()
-        # print(tree)
-
-        # for child in root:
-        #     print (child.tag, child.attrib)
 
     except ET.ParseError as e:
         print(f"Error parsing XML file: {e}")
@@ -108,109 +24,162 @@ def convert_to_gmsh(openmc_file, gmsh_file, dimensionality):
         print("No <geometry> element found in the XML file.")
         return
 
-    surfaces = geometry.findall('surface')
-    if not surfaces:
+    xml_surfaces = geometry.findall('surface')
+    if not xml_surfaces:
         print("No <surface> elements found within <geometry>.")
+        return
+
+    xml_cells = geometry.findall('cell')
+    if not xml_cells:
+        print("No <cell> elements found within <geometry>.")
         return
 
     points = {}
     lines = []
-    id_counter = 0
+    list_of_surface_objects = []
+    list_of_cell_objects = []
+    list_of_boundaries = []
+    boundary_IDS = []
+
+    for current_surface in xml_surfaces:
+        try:
+            surface_obj = parse_openmc_surface(current_surface, dimensionality, extrudedLength=extrudedLength)
+            list_of_surface_objects.append(surface_obj)
+            if "boundary" in surface_obj.type:
+                list_of_boundaries.append(surface_obj)
+        except ValueError as e:
+                print(f"Skipping surface due to error: {e}")
+
+    for current_cell in xml_cells:
+        try:
+            cell_obj = parse_openmc_cell(current_cell, dimensionality)
+            cell_obj.findAllBoundingSurfaces(list_of_surface_objects)
+            list_of_cell_objects.append(cell_obj)
+        except ValueError as e:
+                print(f"Skipping surface due to error: {e}")
+
+    #Determine the bounding lines/planes:
+    xmin, xmax, ymin, ymax, zmin, zmax = determine_bounding_box(list_of_boundaries, extrudedLength)
+    bounding_dimensions = [xmin, xmax, ymin, ymax, zmin, zmax]
+    #print(f"zmax: {zmax}")
+    
+    #Fixing my list buffonery:
+    #xmin = xmin[0]
+    #xmax = xmax[0]
+    #ymin = ymin[0]
+    #ymax = ymax[0]
+    #zmin = zmin[0]
+    #zmax = zmax[0]
+
 
 
     # Process each surface in the OpenMC file
     with open(gmsh_file, 'w') as f:
 
-        for current_surface in surfaces:
+        #Write the OpenCASCADE Header:
+        f.write('SetFactory("OpenCASCADE");\n\n')
+
+        #Write the bounding lines/planes:
+        for boundary_obj in list_of_boundaries:
+            #print(boundary_obj)
+            f.write(boundary_obj.write_gmsh_representation(bounding_dimensions, dimensionality))
+
+            if (dimensionality == 3) or (boundary_obj.type != "z-boundary-plane"): #add all boundary planes for 3D conversion, but only add x and y boundary planes for 2D conversion
+                boundary_IDS.append(boundary_obj.gmsh_id)
+
+        
+        #Write the boundary physical groups:
+        f.write(constructBoundaryPhysicalGroups(list_of_boundaries, dimensionality))
+
+        #Write the surface entries:
+        for surface_obj in list_of_surface_objects:
             try:
-                surface_obj = parse_openmc_surface(current_surface)
+                #surface_obj = parse_openmc_surface(current_surface, dimensionality)
                 #line = []
                 match surface_obj.type:
                     case "x-plane":
                         print ("XPlane Encountered!")
-                        #if dimensionality == 2:
-                            #f.write(f"Sphere({surface_dict['id']}) = {surface_dict['x0']}, {surface_dict['y0']}, {surface_dict['z0']}, {surface_dict['r']};\n")
                     case "y-plane":
                         print ("YPlane Encountered!")
                     case "z-plane":
                         print ("ZPlane Encountered!")
+                    case "x-plane-boundary":
+                        print ("XPlane Boundary Encountered!")
+                    case "y-plane-boundary":
+                        print ("YPlane BoundaryEncountered!")
+                    case "z-plane-boundary":
+                        print ("ZPlane Boundary Encountered!")
                     case "plane":
                         print ("Plane Encountered!")
-
                     case "sphere":
                         print ("Sphere Encountered!")
-                        #f.write(f"Sphere({surface_dict['id']}) = {surface_dict['x0']}, {surface_dict['y0']}, {surface_dict['z0']}, {surface_dict['r']};\n")
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
                     case "x-cylinder":
                         print ("XCylinder Encountered!")
-                        #f.write(f"Cylinder({surface_dict['id']}) = 0, {surface_dict['y0']}, {surface_dict['z0']}, 1, 0, 0, {surface_dict['r']};\n")
+                        surface_obj.setBaseAndHeight(bounding_dimensions)
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
                     case "y-cylinder":
                         print ("YCylinder Encountered!")
-                        #f.write(f"Cylinder({surface_dict['id']}) = {surface_dict['x0']}, 0, {surface_dict['z0']}, 0, 1, 0, {surface_dict['r']};\n")
+                        surface_obj.setBaseAndHeight(bounding_dimensions)
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
                     case "z-cylinder":
                         print ("ZCylinder Encountered!")
-                        #if dimensionality == 2:
-                            #f.write(f"Circle({surface_dict['id']}) = {surface_dict['x0']}, {surface_dict['y0']}, 0,  {surface_dict['r']};\n")
-                        #if dimensionality == 3:
-                            #f.write(f"Cylinder({surface_dict['id']}) = {surface_dict['x0']}, {surface_dict['y0']}, 0, 0, 0, 1, {surface_dict['r']};\n")
-                    #case "x-cone":
-                    #    print ("XCone Encountered!")
-                    #    f.write(f"Cylinder({surface_dict['id']}) = {surface_dict['x0']}, {surface_dict['y0']}, {surface_dict['z0']}, 1, 0, 0, {surface_dict['r']};\n")
+                        surface_obj.setBaseAndHeight(bounding_dimensions)
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
+                    case "x-torus":
+                        print ("XTorus Encountered!")
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
+                    case "y-torus":
+                        print ("YTorus Encountered!")
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
+                    case "z-torus":
+                        print ("ZTorus Encountered!")
+                        f.write(surface_obj.write_gmsh_representation(dimensionality))
                     case _:
                         print("Unimplemented Surface Encountered!")
-                #for point in line_points:
-                #    if point not in points:
-                #        points[point] = len(points) + 1
-                #    line.append(points[point])
-                #lines.append(tuple(line))
+                        print(f"Type: {surface_obj.type}")
+
             except ValueError as e:
                 print(f"Skipping surface due to error: {e}")
 
-        # Write to Gmsh file
-    #with open(gmsh_file, 'w') as f:
-    #    for point, idx in points.items():
-    #        f.write(f"Point({idx}) = {{{point[0]}, {point[1]}, 0, 1.0}};\n")
-    #    for i, line in enumerate(lines, 1):
-    #        f.write(f"Line({i}) = {{{line[0]}, {line[1]}}};\n")
 
-#plane_dict1 = {"a":1 , "b":2 , "c":1 , "d":3}
+        #Write the Void Volume/Surface:
+        boundary_id_string = ""
+        for bound_id in boundary_IDS:
+            boundary_id_string = boundary_id_string + str(bound_id) + ", "
+        boundary_id_string = boundary_id_string[:-2] # remove the final comma and space
 
-example_plane = surface("plane")
-example_plane.setCoefficients(1, 1, 1, 3)
+        if dimensionality == 3: #void volume
+            f.write("\n// Void Volume with gmsh ID 0 (Necessary for Cell Construction)\n")
+            f.write("Box(0) = {" + f"{xmin[0]}, {ymin[0]}, {zmin[0]}, {xmax[0]-xmin[0]}, {ymax[0]-ymin[0]}, {zmax[0]-zmin[0]}" + "};\n")
+        elif dimensionality == 2: # void surface
+            f.write("\n// Void Surface with gmsh ID 0 (Necessary for Cell Construction)\n")
+            f.write("Rectangle(0) = {" + f"{xmin[0]}, {ymin[0]}, 0, {xmax[0]-xmin[0]}, {ymax[0]-ymin[0]}" + "};\n")
 
-#plane2 = surface("plane")
-#plane2.setCoefficients(1, 0, 0, 9)
+        #Write the cell entries:
+        for cell_obj in list_of_cell_objects:
+            try:
+                match cell_obj.type:
+                    case "cell":
+                        print ("Cell Encountered!")
+                        f.write(cell_obj.write_gmsh_representation(dimensionality))
+                    case _:
+                        print("Unimplemented Volume Encountered!")
 
-line1 = line("straight")
-line1.setCoefficients(0, 1, 0, 1, 2, 3)
+            except ValueError as e:
+                print(f"Skipping cell due to error: {e}")
 
-# Set up  bounding box:
-xmin = -10
-xmax = 10
-ymin = -10
-ymax = 5
-zmin = 0
-zmax = 10
+        #Write the boundary physical groups:
+        f.write(constructMaterialPhysicalGroups(list_of_cell_objects, dimensionality))
 
-top_boundary = surface("plane")
-top_boundary.setCoefficients(0, 0, 1, zmax)
+    print(f"Finished {dimensionality}D conversion of {openmc_file}, converted file printed to {gmsh_file}")
 
-bottom_boundary = surface("plane")
-bottom_boundary.setCoefficients(0, 0, 1, zmin)
 
-front_boundary = surface("plane")
-front_boundary.setCoefficients(0, 1, 0, ymax)
+# Running the function:
 
-back_boundary = surface("plane")
-back_boundary.setCoefficients(0, 1, 0, ymin)
+#Pincell Example (2D and 3D):
+convert_to_gmsh('./OpenMC_Examples/pincellGeometry.xml', './convertedPincellGeometry_2D.geo', 2)
+convert_to_gmsh('./OpenMC_Examples/pincellGeometry.xml', './convertedPincellGeometry_3D.geo', 3, extrudedLength = 3)
 
-right_boundary = surface("plane")
-right_boundary.setCoefficients(1, 0, 0, xmax)
-
-left_boundary = surface("plane")
-left_boundary.setCoefficients(1, 0, 0, xmin)
-
-find_plane_bounding_points(example_plane, top_boundary, bottom_boundary, front_boundary, back_boundary, right_boundary, left_boundary)
-
-# Running the function
-convert_to_gmsh('./pincellGeometry.xml', './convertedPincellGeometry.geo', 2)
-#convert_to_gmsh('./simpleGeometry.xml', './convertedGeometry.geo', 3)
+# Assorted Solids Example (3D):
+convert_to_gmsh('./OpenMC_Examples/AssortedGeometry.xml', './convertedAssortedGeometry_3D.geo', 3)
