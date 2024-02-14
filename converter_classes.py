@@ -3,7 +3,7 @@ from converter_functions import *
 
 id_counter = 1 #id = 0 is reserved for the void volume/surface
 
-class volume:
+class Volume:
     """Base Class for 3-dimensional objects (i.e. cells in OpenMC)"""
 
     def __init__(self, volume_type):
@@ -164,7 +164,7 @@ class volume:
 
         return(output_string)
 
-class surface:
+class Surface:
     """Base Class for 2-dimensional objects (i.e. surfaces in OpenMC)"""
 
     def __init__(self, surface_type):
@@ -203,7 +203,7 @@ class surface:
         self.boundingLineIDs.append(input_line.gmsh_id)
 
 
-class cylinder(surface):
+class Cylinder(Surface):
     """Child Class for Cylindrical Surfaces"""
 
     def __str__(self):
@@ -274,7 +274,7 @@ class cylinder(surface):
 
         return(output_string)
 
-class sphere(surface):
+class Sphere(Surface):
     """Child Class for Spherical Surfaces"""
 
     def __str__(self):
@@ -305,7 +305,7 @@ class sphere(surface):
 
         return(output_string)
 
-class torus(surface):
+class Torus(Surface):
     """Child Class for Toroidal Surfaces"""
 
     def __str__(self):
@@ -348,7 +348,7 @@ class torus(surface):
 
 
 
-class boundary(surface):
+class Boundary(Surface):
     """Child Class for Planar Boundary Surfaces"""
 
     def __str__(self):
@@ -382,23 +382,23 @@ class boundary(surface):
 
         if dimensionality == 3:
 
-            line_1 = line("straight")
-            line_2 = line("straight")
-            line_3 = line("straight")
-            line_4 = line("straight")
+            line_1 = Line("straight")
+            line_2 = Line("straight")
+            line_3 = Line("straight")
+            line_4 = Line("straight")
 
             if self.type == "x-plane-boundary":
             #print(self.coeffs["d"])
                 if self.coeffs["d"][0] == xmin: #if left boundary
-                    point_1 = point(xmin, ymin, zmin)
-                    point_2 = point(xmin, ymax, zmin)
-                    point_3 = point(xmin, ymax, zmax)
-                    point_4 = point(xmin, ymin, zmax)
+                    point_1 = Point(xmin, ymin, zmin)
+                    point_2 = Point(xmin, ymax, zmin)
+                    point_3 = Point(xmin, ymax, zmax)
+                    point_4 = Point(xmin, ymin, zmax)
                 elif self.coeffs["d"][0] == xmax: #if right boundary
-                    point_1 = point(xmax, ymin, zmin)
-                    point_2 = point(xmax, ymax, zmin)
-                    point_3 = point(xmax, ymax, zmax)
-                    point_4 = point(xmax, ymin, zmax)
+                    point_1 = Point(xmax, ymin, zmin)
+                    point_2 = Point(xmax, ymax, zmin)
+                    point_3 = Point(xmax, ymax, zmax)
+                    point_4 = Point(xmax, ymin, zmax)
                 else:
                     raise ValueError("Invalid Boundary Coordinate Provided")
 
@@ -409,15 +409,15 @@ class boundary(surface):
 
             elif self.type == "y-plane-boundary":
                 if self.coeffs["d"][0] == ymin: #if back boundary
-                    point_1 = point(xmin, ymin, zmin)
-                    point_2 = point(xmin, ymin, zmax)
-                    point_3 = point(xmax, ymin, zmax)
-                    point_4 = point(xmax, ymin, zmin)
+                    point_1 = Point(xmin, ymin, zmin)
+                    point_2 = Point(xmin, ymin, zmax)
+                    point_3 = Point(xmax, ymin, zmax)
+                    point_4 = Point(xmax, ymin, zmin)
                 elif self.coeffs["d"][0] == ymax: #if front boundary
-                    point_1 = point(xmin, ymax, zmin)
-                    point_2 = point(xmin, ymax, zmax)
-                    point_3 = point(xmax, ymax, zmax)
-                    point_4 = point(xmax, ymax, zmin)
+                    point_1 = Point(xmin, ymax, zmin)
+                    point_2 = Point(xmin, ymax, zmax)
+                    point_3 = Point(xmax, ymax, zmax)
+                    point_4 = Point(xmax, ymax, zmin)
                 else:
                     raise ValueError("Invalid Boundary Coordinate Provided")
 
@@ -428,15 +428,15 @@ class boundary(surface):
 
             elif self.type == "z-plane-boundary":
                 if self.coeffs["d"][0] == zmin: #if bottom boundary
-                    point_1 = point(xmin, ymin, zmin)
-                    point_2 = point(xmax, ymin, zmin)
-                    point_3 = point(xmax, ymax, zmin)
-                    point_4 = point(xmin, ymax, zmin)
+                    point_1 = Point(xmin, ymin, zmin)
+                    point_2 = Point(xmax, ymin, zmin)
+                    point_3 = Point(xmax, ymax, zmin)
+                    point_4 = Point(xmin, ymax, zmin)
                 elif self.coeffs["d"][0] == zmax: #if top boundary
-                    point_1 = point(xmin, ymin, zmax)
-                    point_2 = point(xmax, ymin, zmax)
-                    point_3 = point(xmax, ymax, zmax)
-                    point_4 = point(xmin, ymax, zmax)
+                    point_1 = Point(xmin, ymin, zmax)
+                    point_2 = Point(xmax, ymin, zmax)
+                    point_3 = Point(xmax, ymax, zmax)
+                    point_4 = Point(xmin, ymax, zmax)
                 else:
                     raise ValueError("Invalid Boundary Coordinate Provided")
 
@@ -473,17 +473,17 @@ class boundary(surface):
 
         elif dimensionality == 2:
 
-            line_1 = line("straight")
+            line_1 = Line("straight")
             line_1.setgmshID(self.gmsh_id) #override the line's gmsh ID to prevent ID conflicts
 
             if self.type == "x-plane-boundary":
             #print(self.coeffs["d"])
                 if self.coeffs["d"][0] == xmin: #if left boundary
-                    point_1 = point(xmin, ymin, 0)
-                    point_2 = point(xmin, ymax, 0)
+                    point_1 = Point(xmin, ymin, 0)
+                    point_2 = Point(xmin, ymax, 0)
                 elif self.coeffs["d"][0] == xmax: #if right boundary
-                    point_1 = point(xmax, ymin, 0)
-                    point_2 = point(xmax, ymax, 0)
+                    point_1 = Point(xmax, ymin, 0)
+                    point_2 = Point(xmax, ymax, 0)
                 else:
                     raise ValueError("Invalid Boundary Coordinate Provided")
 
@@ -492,11 +492,11 @@ class boundary(surface):
 
             elif self.type == "y-plane-boundary":
                 if self.coeffs["d"][0] == ymin: #if back boundary
-                    point_1 = point(xmin, ymin, 0)
-                    point_2 = point(xmax, ymin, 0)
+                    point_1 = Point(xmin, ymin, 0)
+                    point_2 = Point(xmax, ymin, 0)
                 elif self.coeffs["d"][0] == ymax: #if front boundary
-                    point_1 = point(xmin, ymax, 0)
-                    point_2 = point(xmax, ymax, 0)
+                    point_1 = Point(xmin, ymax, 0)
+                    point_2 = Point(xmax, ymax, 0)
                 else:
                     raise ValueError("Invalid Boundary Coordinate Provided")
 
@@ -516,7 +516,7 @@ class boundary(surface):
             
         return(output_string)
 
-class plane(surface):
+class Plane(Surface):
     """Child Class for Planar Surfaces"""
 
     def __str__(self):
@@ -548,7 +548,7 @@ class plane(surface):
         return(output_string) 
 
 
-class line:
+class Line:
     """Base Class for 1-Dimensional Objects"""
 
     def __init__(self, line_type):
@@ -600,7 +600,7 @@ class line:
 
         return(output_string)
 
-class circle(line):
+class Circle(Line):
     """Child Class for Circular Lines"""
 
     def __str__(self):
@@ -617,7 +617,7 @@ class circle(line):
 
         #Define the Bounding Points of the Cirlce (centerpoint and 4 orthogonal points on the circumference):
         
-        centerpoint = point(x0, y0, z0)
+        centerpoint = Point(x0, y0, z0)
         self.boundingPoints.append(centerpoint)
 
         normal_vector = np.array([alpha, beta, epsilon])
@@ -631,11 +631,11 @@ class circle(line):
         orthogonal_vector_2 = orthogonal_vector_2/np.linalg.norm(orthogonal_vector_2)
 
         #Use the orthogonal vectors to orthogonal points along the circumference of the circle:
-        orthogonal_point_1 = point(x0 + r*orthogonal_vector_1[0], y0 + r*orthogonal_vector_1[1], z0 + r*orthogonal_vector_1[2])
-        orthogonal_point_2 = point(x0 + r*orthogonal_vector_2[0], y0 + r*orthogonal_vector_2[1], z0 + r*orthogonal_vector_2[2])
+        orthogonal_point_1 = Point(x0 + r*orthogonal_vector_1[0], y0 + r*orthogonal_vector_1[1], z0 + r*orthogonal_vector_1[2])
+        orthogonal_point_2 = Point(x0 + r*orthogonal_vector_2[0], y0 + r*orthogonal_vector_2[1], z0 + r*orthogonal_vector_2[2])
 
-        orthogonal_point_3 = point(x0 - r*orthogonal_vector_1[0], y0 - r*orthogonal_vector_1[1], z0 - r*orthogonal_vector_1[2])
-        orthogonal_point_4 = point(x0 - r*orthogonal_vector_2[0], y0 - r*orthogonal_vector_2[1], z0 - r*orthogonal_vector_2[2])
+        orthogonal_point_3 = Point(x0 - r*orthogonal_vector_1[0], y0 - r*orthogonal_vector_1[1], z0 - r*orthogonal_vector_1[2])
+        orthogonal_point_4 = Point(x0 - r*orthogonal_vector_2[0], y0 - r*orthogonal_vector_2[1], z0 - r*orthogonal_vector_2[2])
         
         #Add the orthogonal points to the list of bounding points:
         self.boundingPoints.append(orthogonal_point_1)
@@ -651,10 +651,10 @@ class circle(line):
         for bound_point in self.boundingPoints:
             output_string = output_string + bound_point.write_gmsh_representation()
 
-        line_1 = line("circle arc")
-        line_2 = line("circle arc")
-        line_3 = line("circle arc")
-        line_4 = line("circle arc")
+        line_1 = Line("circle arc")
+        line_2 = Line("circle arc")
+        line_3 = Line("circle arc")
+        line_4 = Line("circle arc")
 
         output_string = output_string + f"Circle({line_1.gmsh_id}) = " + "{" + f"{self.boundingPoints[1].gmsh_id}, {self.boundingPoints[0].gmsh_id}, {self.boundingPoints[2].gmsh_id}" + "};\n"
 
@@ -674,7 +674,7 @@ class circle(line):
 
 
 
-class point:
+class Point:
     """Base Class for 0-Dimensional Objects"""
 
     def __init__(self, x, y, z):

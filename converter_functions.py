@@ -1,6 +1,5 @@
 import numpy as np
 import xml.etree.ElementTree as ET
-import numpy as np
 from converter_classes import *
 
 def parse_openmc_surface(xml_surface, dimensionality, extrudedLength=None):
@@ -38,35 +37,35 @@ def parse_openmc_surface(xml_surface, dimensionality, extrudedLength=None):
         #Planes:
         case "x-plane":
             x0 = coeffs
-            new_surface = plane("x-plane")
+            new_surface = Plane("x-plane")
             new_surface.setCoefficients(1, 0, 0, x0)
         case "y-plane":
             y0 = coeffs
-            new_surface = plane("y-plane")
+            new_surface = Plane("y-plane")
             new_surface.setCoefficients(0, 1, 0, y0)
         case "z-plane":
             z0 = coeffs
-            new_surface = plane("z-plane")
+            new_surface = Plane("z-plane")
             new_surface.setCoefficients(0, 0, 1, z0)
         case "plane":
             a, b, c, d = coeffs
-            new_surface = plane("plane")
+            new_surface = Plane("plane")
             new_surface.setCoefficients(a, b, c, d)
         #Spheres:
         case "sphere":
             x0, y0, z0, r = coeffs
-            new_surface = sphere("sphere")
+            new_surface = Sphere("sphere")
             new_surface.setCoefficients(x0, y0, z0, r)
         #Cones:
         case "x-cone":
             x0, y0, z0, r2 = coeffs
-            new_surface = surface("x-cone")
+            new_surface = Surface("x-cone")
         case "y-cone":
             x0, y0, z0, r2 = coeffs
-            new_surface = surface("y-cone")
+            new_surface = Surface("y-cone")
         case "z-cone":
             x0, y0, z0, r2 = coeffs
-            new_surface = surface("z-cone")
+            new_surface = Surface("z-cone")
         case "x-cylinder":
             y0, z0, r = coeffs
             new_surface = cylinder("x-cylinder")
@@ -216,7 +215,7 @@ def find_intersection_line(plane1, plane2):
 
     print(f"Point: ({x}, {y}, {z}), Direction: <{direction_vector[0]}, {direction_vector[1]}, {direction_vector[2]},>")
 
-    intersection_line = line("straight")
+    intersection_line = Line("straight")
     intersection_line.setCoefficients(x, y, z, direction_vector[0], direction_vector[1], direction_vector[2])
 
     return intersection_line
@@ -310,7 +309,7 @@ def find_plane_line_intersection_point(plane1, line1):
     y = y0 + (beta*t)
     z = z0 + (epsilon*t)
 
-    intersection_point = point(x, y, z)
+    intersection_point = Point(x, y, z)
     return intersection_point
 
     print(f"Point ({x}, {y}, {z})")
@@ -394,8 +393,8 @@ def find_line_line_intersection_point(line1, line2):
     y = y01 + beta1*t
     z = z01 + epsilon1*t
 
-    intersection_point = point(x, y, z)
-    #print(f"Intersection point = ({x}, {y}, {z})")
+    intersection_point = Point(x, y, z)
+    #print(f"Intersection Point = ({x}, {y}, {z})")
     return intersection_point
 
 
@@ -411,7 +410,7 @@ def is_point_within_bounds(input_point, xmin, xmax, ymin, ymax, zmin, zmax):
     return (x_within_range and y_within_range and z_within_range)
 
 def find_plane_bounding_points(plane1, top_boundary, bottom_boundary, front_boundary, back_boundary, right_boundary, left_boundary):
-    """Given the bounding planes, find the bouning points at which the planes intersect."""
+    """Given the bounding planes, find the bounding points at which the planes intersect."""
 
     xmin = left_boundary.coeffs["d"]
     xmax = right_boundary.coeffs["d"]
