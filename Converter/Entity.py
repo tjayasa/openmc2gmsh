@@ -10,7 +10,6 @@ class Entity:
     def __init__(self, prims: list[Prims]):
         """Entity will initialize gmsh if not already intialized."""
         self.primatives: list[Prims] = prims
-        self.create_prims()
         self.id = Entity.count
         self.mesh = None
         
@@ -26,11 +25,12 @@ class Entity:
                                                 Prims.BOUNDING_VALUE,              # dz
                                                 0)                                 # tag = 0
 
-    def create_intersection(self, primIDs: list[int], prims: list[Prims]):
+    def create_intersection(self, primIDs: list[int], entity_id: int):
         """Calls the Gmsh api to store the intersection in self.mesh"""
         #TODO: call Gmsh api to set self.mesh = GmshObject
-        # gmsh.model.occ.intersect([(3, 1),(3, 2)], [(3, 3), (3, 4)])
+        gmsh.model.occ.intersect([(3,i) for i in primIDs], [(3, 0)], removeObject=False, removeTool=False)
         # gmsh.model.occ.intersect()
+        
     
     def write_xml(self):
         """Write entity to the XML"""
