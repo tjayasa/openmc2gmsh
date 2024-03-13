@@ -32,6 +32,8 @@ def read_xml(openmc_file):
     if not xml_surfaces:
         print("No <surface> elements found within <geometry>.")
         return
+    
+    print("surfaces:")
     for surface in xml_surfaces:
         surface_id = int(surface.get('id'))
         surface_type = str(surface.get('type'))
@@ -59,14 +61,49 @@ def read_xml(openmc_file):
         if surface_type == "z-cylinder":
             ZCylinder(surface_id,coeffs)
        
-    # temp = Entity([])
-    # temp.create_intersection([100003,4],200000)
-    
-    # factory = gmsh.model.occ
-    # # factory.add_box(-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,
-    # #                            Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,0)     
+    factory = gmsh.model.occ
     # factory.synchronize()
     # gmsh.fltk.run()   
+    
+    xml_cells = geometry.findall("cell")
+    for cell in xml_cells:
+        #<cell id="6" material="4" name="moderator" region="6 -7 8 -9 5" universe="3" />
+        cell_id = int(cell.get("id"))
+        cell_name = cell.get("name")
+        cell_universe = int(cell.get("universe"))
+        cell_mat = cell.get("material")
+        cell_mat = 0 if cell_mat == "void" else int(cell_mat)
+        # print(cell.get("region"))
+        cell_region = [int(i) for i in cell.get("region").split()]
+        
+        print({"cell_id" : cell_id, 
+               "cell_region": cell_region,
+               "cell_mat" : cell_mat,
+               "cell_name" : cell_name, 
+               "cell_universe" : cell_universe
+               })
+        
+        entity = Entity(id=cell_id,
+               region=cell_region,
+               material=cell_mat,
+               name=cell_name,
+               universe=cell_universe)
+        
+        entity.create_intersection()
+        
+        
+        
+        
+    # temp = Entity(200000, [3,-5,-6], 0)
+    # temp.create_intersection()
+    # temp.create_intersection([100003,5,6],200000)
+    # temp.create_intersection([5,100003],200001)
+    
+    
+    # factory.add_box(-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,
+    #                            Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,0)     
+    factory.synchronize()
+    gmsh.fltk.run()   
 
     xml_cells = geometry.findall('cell')
     if not xml_cells:
