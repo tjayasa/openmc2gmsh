@@ -58,13 +58,27 @@ def read_xml(openmc_file):
             coeffs = [0, 0, 1, coeffs[0]]
             Plane(surface_id,coeffs)
             
+        if surface_type == "x-cylinder":
+            ZCylinder(surface_id,coeffs)
+            
+        if surface_type == "y-cylinder":
+            YCylinder(surface_id,coeffs)
+        
         if surface_type == "z-cylinder":
             ZCylinder(surface_id,coeffs)
-       
-    factory = gmsh.model.occ
-    # factory.synchronize()
-    # gmsh.fltk.run()   
-    
+        
+        if surface_type == "sphere":
+            Sphere(surface_id,coeffs)
+            
+        if surface_type == "x-torus":
+            XTorus(surface_id, coeffs)
+        
+        if surface_type == "y-torus":
+            XTorus(surface_id, coeffs)
+            
+        if surface_type == "z-torus":
+            XTorus(surface_id, coeffs)
+            
     xml_cells = geometry.findall("cell")
     for cell in xml_cells:
         #<cell id="6" material="4" name="moderator" region="6 -7 8 -9 5" universe="3" />
@@ -102,8 +116,9 @@ def read_xml(openmc_file):
     
     # factory.add_box(-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,
     #                            Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,0)     
-    factory.synchronize()
-    gmsh.fltk.run()   
+    gmsh.model.occ.synchronize()    
+    gmsh.fltk.run()
+    gmsh.finalize()
 
     xml_cells = geometry.findall('cell')
     if not xml_cells:
@@ -111,5 +126,5 @@ def read_xml(openmc_file):
         return
     
     
-# read_xml("./OpenMC_Examples/./OpenMC_Examples/pincellGeometry.xml")
+# read_xml("OpenMC_Examples/pincellGeometry.xml")
     

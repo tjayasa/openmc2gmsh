@@ -6,10 +6,9 @@ class Prims:
     LARGE_VALUE = BOUNDING_VALUE * 10
     # ORIENTATION_OFFSET = 1073741824
     ORIENTATION_OFFSET = 100000
-    maxID: int = 1 #index 0 = bounding box
-    idMap: dict = {}
+    BOUNDING_BOX_TAG = None
+    
     def __init__(self, id: int, coeffs, albedo, name, boundry_type):
-        Prims.maxID += 1
         self.id: int = id
         self.coeffs: list[float] = coeffs
         self.albedo: float = albedo
@@ -18,7 +17,17 @@ class Prims:
         
         if not gmsh.is_initialized():
             gmsh.initialize()
-        
+            
+        if Prims.BOUNDING_BOX_TAG is None:
+            Prims.bounding_box = gmsh.model.occ.add_box(-Prims.BOUNDING_VALUE/2,  # corner.x
+                                                -Prims.BOUNDING_VALUE/2,           # corner.y
+                                                -Prims.BOUNDING_VALUE/2,           # corner.z
+                                                Prims.BOUNDING_VALUE,              # dx
+                                                Prims.BOUNDING_VALUE,              # dy
+                                                Prims.BOUNDING_VALUE,              # dz
+                                                0)                                 # tag = 0
+            Prims.BOUNDING_BOX_TAG = 0
+
 class Plane(Prims):
     def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
         super().__init__(id, coeffs, albedo, name, boundry_type)
@@ -59,18 +68,84 @@ class Plane(Prims):
         dir_vec_pos = 2 * Prims.LARGE_VALUE * (dx + dy + normal)
         dir_vec_neg = 2 * Prims.LARGE_VALUE * (dx + dy - normal)
         gmsh.model.occ.add_box(bot_left[0],bot_left[1],bot_left[2],dir_vec_pos[0],dir_vec_pos[1],dir_vec_pos[2],self.id)
-        gmsh.model.occ.add_box(bot_left[0],bot_left[1],bot_left[2],dir_vec_neg[0],dir_vec_neg[1],dir_vec_neg[2],Prims.ORIENTATION_OFFSET + self.id)
+        gmsh.model.occ.add_box(bot_left[0],bot_left[1],bot_left[2],dir_vec_neg[0],dir_vec_neg[1],dir_vec_neg[2],Prims.ORIENTATION_OFFSET + self.id)       
 
+
+class XCylinder(Prims):
+    def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
+        super().__init__(id, coeffs, albedo, name, boundry_type)
+        self.__make_large_x_cylinder(coeffs[0],coeffs[1],coeffs[2])
+    
+    def __make_large_x_cylinder(self, y: float, z:float , r:float):
+        factory = gmsh.model.occ
+        factory.add_cylinder(-Prims.LARGE_VALUE, 0, 0, 2 * Prims.LARGE_VALUE, y, z, r, Prims.ORIENTATION_OFFSET + self.id)
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)
+        
+class YCylinder(Prims):
+    def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
+        super().__init__(id, coeffs, albedo, name, boundry_type)
+        self.__make_large_y_cylinder(coeffs[0],coeffs[1],coeffs[2])
+    
+    def __make_large_y_cylinder(self, x: float, z:float , r:float):
+        factory = gmsh.model.occ
+        factory.add_cylinder(x, -Prims.LARGE_VALUE, 0, 0, 2 * Prims.LARGE_VALUE, z, r, Prims.ORIENTATION_OFFSET + self.id)
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)
+        
 class ZCylinder(Prims):
     def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
         super().__init__(id, coeffs, albedo, name, boundry_type)
         self.__make_large_z_cylinder(coeffs[0],coeffs[1],coeffs[2])
     
-    def __make_large_z_cylinder(self, x: float, y:float , r:float):
+    def __make_large_z_cylinder(self, x: float, y: float , r: float):
         factory = gmsh.model.occ
         factory.add_cylinder(x, y, -Prims.LARGE_VALUE, 0, 0, 2 * Prims.LARGE_VALUE, r, Prims.ORIENTATION_OFFSET + self.id)
-        factory.add_box(-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,
-                               Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,self.id + 1)
-        gmsh.model.occ.cut([(3,self.id + 1)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, True, False)
-        # factory.synchronize()
-        # gmsh.fltk.run()
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)
+        
+class Sphere(Prims):
+    def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
+        super().__init__(id, coeffs, albedo, name, boundry_type)
+        self.__make_sphere(coeffs[0],coeffs[1],coeffs[2],coeffs[3])
+        
+    def __make_sphere(self, x_0: float, y_0: float, z_0: float, r: float):
+        factory = gmsh.model.occ
+        factory.add_sphere(x_0, y_0, z_0, r, Prims.ORIENTATION_OFFSET + self.id)
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)
+
+
+class MinorAxisNotAllowed(Exception):
+    pass
+class XTorus(Prims):
+    def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
+        super().__init__(id, coeffs, albedo, name, boundry_type)
+        if coeffs[-1] != coeffs[-2]:
+            raise MinorAxisNotAllowed("Gmsh torus does not allow for a minor axis but {coeffs[c]} was provided.")
+        self.__make_torus(coeffs[0],coeffs[1],coeffs[2],coeffs[3],coeffs[4])
+
+    def __make_torus(self, x_0: float, y_0: float, z_0: float, a: float, b: float):
+        factory = gmsh.model.occ
+        factory.add_torus(x_0,y_0,z_0, a, b, Prims.ORIENTATION_OFFSET + self.id, zAxis=[1,0,0])
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)
+        
+class YTorus(Prims):
+    def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
+        super().__init__(id, coeffs, albedo, name, boundry_type)
+        if coeffs[-1] != coeffs[-2]:
+            raise MinorAxisNotAllowed("Gmsh torus does not allow for a minor axis but {coeffs[c]} was provided.")
+        self.__make_torus(coeffs[0],coeffs[1],coeffs[2],coeffs[3],coeffs[4])
+
+    def __make_torus(self, x_0: float, y_0: float, z_0: float, a: float, b: float):
+        factory = gmsh.model.occ
+        factory.add_torus(x_0,y_0,z_0, a, b, Prims.ORIENTATION_OFFSET + self.id, zAxis=[0,1,0])
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)
+
+class ZTorus(Prims):
+    def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
+        super().__init__(id, coeffs, albedo, name, boundry_type)
+        if coeffs[-1] != coeffs[-2]:
+            raise MinorAxisNotAllowed("Gmsh torus does not allow for a minor axis but {coeffs[c]} was provided.")
+        self.__make_torus(coeffs[0],coeffs[1],coeffs[2],coeffs[3],coeffs[4])
+
+    def __make_torus(self, x_0: float, y_0: float, z_0: float, a: float, b: float):
+        factory = gmsh.model.occ
+        factory.add_torus(x_0,y_0,z_0, a, b, Prims.ORIENTATION_OFFSET + self.id, zAxis=[0,0,1])
+        gmsh.model.occ.cut([(3,0)],[(3,Prims.ORIENTATION_OFFSET + self.id)], self.id, False, False)

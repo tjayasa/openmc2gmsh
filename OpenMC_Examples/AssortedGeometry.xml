@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding='utf-8'?>
 <geometry>
   <cell id="3" material="1" name="fuel_1" region="-3" universe="3" />
-  <cell id="3" material="1" name="fuel_2" region="-12" universe="3" />
+  <!-- <cell id="9" material="1" name="fuel_2" region="-12" universe="3" /> -->
   <cell id="7" material="1" name="fuel_3" region="-13" universe="3" />
   <cell id="4" material="2" name="air gap" region="-4" universe="3" />
   <cell id="5" material="3" name="clad_sphere" region="-5" universe="3" />
   <cell id="5" material="3" name="clad_rod" region="-14" universe="3" />
   <cell id="6" material="4" name="moderator" region="6 -7 8 -9 10 -11 3 4 5 12 13 14" universe="3" />
   <surface coeffs="-0.7 -0.7 -0.5 0.2" id="3" type="sphere" />
-  <surface coeffs="0.2 0.1 0.6 0.6 0.4" id="12" type="x-torus" />
-  <surface coeffs="0.2 0.1 -0.6 -0.6 0.4" id="13" type="y-torus" />
+  <surface coeffs="0.2 0.1 0.6 0.6 0.4 0.4" id="12" type="x-torus" />
+  <surface coeffs="0.2 0.1 -0.6 0.6 0.4 0.4" id="13" type="y-torus" />
   <surface coeffs="-0.5 0.5 0.5 0.46" id="5" type="sphere" />
   <surface coeffs="0.5 -0.5 0.4" id="4" type="z-cylinder" />
   <surface coeffs="0.5 -0.5 0.2" id="14" type="x-cylinder" />
