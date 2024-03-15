@@ -96,14 +96,13 @@ def read_xml(openmc_file):
                "cell_name" : cell_name, 
                "cell_universe" : cell_universe
                })
-        
         entity = Entity(id=cell_id,
                region=cell_region,
                material=cell_mat,
                name=cell_name,
                universe=cell_universe)
-        
         entity.create_intersection()
+        # print(gmsh.model.occ.get_entities(3))
         
         
         

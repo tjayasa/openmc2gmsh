@@ -16,11 +16,16 @@ class Entity:
             
     def create_intersection(self):
         """ Calls the Gmsh api to store the intersection in self.mesh """
+        # outtag = gmsh.model.occ.copy([(3,self.primIDs[0])])
         if len(self.primIDs) == 1:
             # print(self.primIDs[0])
-            gmsh.model.occ.intersect( [(3,self.primIDs[0])],[(3,0)],
+            # replace save_id with the cheapest 3d mesh to create
+            gmsh.model.occ.add_sphere(0,0,0,Prims.BOUNDING_VALUE,self.id)
+            temp = gmsh.model.occ.copy([(3,self.primIDs[0])])
+            gmsh.model.occ.remove([(3,self.id)])
+            gmsh.model.occ.intersect( temp ,[(3,0)],
                                         tag=self.id,
-                                        removeObject=False,
+                                        removeObject=True,
                                         removeTool=False)
             return
         write_tag = self.id + Prims.ORIENTATION_OFFSET if len(self.primIDs) % 2 == 0 else self.id
