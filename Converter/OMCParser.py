@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import gmsh
 from Converter import *
+import re
 
 
 if not gmsh.is_initialized():
@@ -8,7 +9,17 @@ if not gmsh.is_initialized():
     gmsh.option.setNumber("Mesh.Algorithm", 6)
     gmsh.option.setNumber("Mesh.MeshSizeMin", 0.4)
     gmsh.option.setNumber("Mesh.MeshSizeMax", 0.4)
+
+def get_id_map(xml_surfaces, compress = True) -> dict:
+    """Returns the mapping from openMC ids to Gmsh tags (before encoding)"""
+    id_map = {}
+    for surface in xml_surfaces:
+        curr_id = int(len(id_map)/2 + 1) if compress else int(surface.get('id'))
+        id_map[int(surface.get('id'))] = curr_id
+        id_map[-int(surface.get('id'))] = -curr_id
+    return id_map
     
+
 def read_xml(openmc_file):
     """Convert OpenMC geometry to Gmsh format."""
 
@@ -34,6 +45,8 @@ def read_xml(openmc_file):
         return
     
     print("surfaces:")
+    id_map = get_id_map(xml_surfaces, False)
+    # print(id_map)
     for surface in xml_surfaces:
         surface_id = int(surface.get('id'))
         surface_type = str(surface.get('type'))
@@ -48,47 +61,56 @@ def read_xml(openmc_file):
         # surface is a plane:
         if surface_type == "x-plane":
             coeffs = [1, 0, 0, coeffs[0]]
-            Plane(surface_id,coeffs)
+            Plane(id_map[surface_id],coeffs)
             
         if surface_type == "y-plane":
             coeffs = [0, 1, 0, coeffs[0]]
-            Plane(surface_id,coeffs)
+            Plane(id_map[surface_id],coeffs)
             
         if surface_type == "z-plane":
             coeffs = [0, 0, 1, coeffs[0]]
-            Plane(surface_id,coeffs)
+            Plane(id_map[surface_id],coeffs)
             
         if surface_type == "x-cylinder":
-            ZCylinder(surface_id,coeffs)
+            ZCylinder(id_map[surface_id],coeffs)
             
         if surface_type == "y-cylinder":
-            YCylinder(surface_id,coeffs)
+            YCylinder(id_map[surface_id],coeffs)
         
         if surface_type == "z-cylinder":
-            ZCylinder(surface_id,coeffs)
+            ZCylinder(id_map[surface_id],coeffs)
         
         if surface_type == "sphere":
-            Sphere(surface_id,coeffs)
+            Sphere(id_map[surface_id],coeffs)
             
         if surface_type == "x-torus":
-            XTorus(surface_id, coeffs)
+            XTorus(id_map[surface_id], coeffs)
         
         if surface_type == "y-torus":
-            XTorus(surface_id, coeffs)
+            XTorus(id_map[surface_id], coeffs)
             
         if surface_type == "z-torus":
-            XTorus(surface_id, coeffs)
+            XTorus(id_map[surface_id], coeffs)
             
+
     xml_cells = geometry.findall("cell")
+    if not xml_cells:
+        print("No <cell> elements found within <geometry>.")
+        return
+
     for cell in xml_cells:
         #<cell id="6" material="4" name="moderator" region="6 -7 8 -9 5" universe="3" />
         cell_id = int(cell.get("id"))
         cell_name = cell.get("name")
-        cell_universe = int(cell.get("universe"))
+        cell_universe = cell.get("universe") if cell.get("universe") is None else int(cell.get("universe"))
         cell_mat = cell.get("material")
         cell_mat = 0 if cell_mat == "void" else int(cell_mat)
-        # print(cell.get("region"))
-        cell_region = [int(i) for i in cell.get("region").split()]
+        cell_region = []
+
+        # print(re.findall('(\(|\)|~|\||-?\d+)',cell.get("region")))
+        cell_region = [id_map[int(i)] if i.replace('-','0').isdigit() else i for i in re.findall('(\(|\)|~|\||-?\d+)',cell.get("region"))]
+        # print(cell_region)
+                
         
         print({"cell_id" : cell_id, 
                "cell_region": cell_region,
@@ -96,6 +118,7 @@ def read_xml(openmc_file):
                "cell_name" : cell_name, 
                "cell_universe" : cell_universe
                })
+
         entity = Entity(id=cell_id,
                region=cell_region,
                material=cell_mat,
@@ -104,25 +127,9 @@ def read_xml(openmc_file):
         entity.create_intersection()
         # print(gmsh.model.occ.get_entities(3))
         
-        
-        
-        
-    # temp = Entity(200000, [3,-5,-6], 0)
-    # temp.create_intersection()
-    # temp.create_intersection([100003,5,6],200000)
-    # temp.create_intersection([5,100003],200001)
-    
-    
-    # factory.add_box(-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,-Prims.BOUNDING_VALUE/2,
-    #                            Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,Prims.BOUNDING_VALUE,0)     
     gmsh.model.occ.synchronize()    
-    gmsh.fltk.run()
-    gmsh.finalize()
-
-    xml_cells = geometry.findall('cell')
-    if not xml_cells:
-        print("No <cell> elements found within <geometry>.")
-        return
+    # gmsh.fltk.run()
+    # gmsh.finalize()
     
     
 # read_xml("OpenMC_Examples/pincellGeometry.xml")

@@ -130,7 +130,7 @@ class YTorus(Prims):
     def __init__(self, id: int, coeffs: list[float], albedo: float = 0.0, name: str = "", boundry_type: str = ""):
         super().__init__(id, coeffs, albedo, name, boundry_type)
         if coeffs[-1] != coeffs[-2]:
-            raise MinorAxisNotAllowed("Gmsh torus does not allow for a minor axis but {coeffs[c]} was provided.")
+            raise MinorAxisNotAllowed("Gmsh torus does not allow for a minor axis but {coeffs[-1]} was provided.")
         self.__make_torus(coeffs[0],coeffs[1],coeffs[2],coeffs[3],coeffs[4])
 
     def __make_torus(self, x_0: float, y_0: float, z_0: float, a: float, b: float):
