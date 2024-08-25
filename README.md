@@ -42,7 +42,7 @@ OMC2Gmsh OpenMC_Examples/complex_cell_geo.xml OpenMC_Examples/complex_cell_mat.x
 ```
 
 which should generate the following gmsh view:
-![example.png](https://github.com/tjayasa/openmc2gmsh/example.png?raw=true)
+![example.png](https://github.com/tjayasa/openmc2gmsh/blob/master/example.png?raw=true)
 
 ## Work to be done
 Currently, this library cannot handle the following
