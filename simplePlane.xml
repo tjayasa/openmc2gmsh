@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<geometry>
-    <cell id="1" material="void" region="-1 -2 3 4" />
-    <surface id="1" type="plane" coeffs="-10.0 0.0 0.0 10.0"/>
-    <surface id="2" type="plane" coeffs="10.0 0.0 0.0 10.0"/>
-    <surface id="3" type="plane" coeffs="0.0 -10.0 0.0 10.0"/>
-    <surface id="4" type="plane" coeffs="0.0 10.0 0.0 10.0"/>
-</geometry>
