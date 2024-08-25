@@ -5,15 +5,26 @@ class InvalidRegionError(Exception):
     pass
 
 class Entity:
-    # self.primatives: List[Prims]
-    # self.id:
+    mat_cell_map = {}
+    univ_cell_map = {}
     ID_OFFSET = 200000
-    def __init__(self, id: int, region: list[int], material: int, name: str = "", universe: int = 0):
+    def __init__(self, id: int, region: list[int],
+                 material: int, name: str = "", universe: int = 0, fill: list = None):
         """Entity will initialize gmsh if not already intialized."""
         self.tags = []
         self.id = id + Entity.ID_OFFSET
+        # self.material = material
         self.region: list = list(map(lambda tag : tag if type(tag) != int else [(3,tag)] if tag > 0 else [(3,Prims.ORIENTATION_OFFSET - tag)],
                          region))
+
+        if material is not None and material not in Entity.mat_cell_map:
+            Entity.mat_cell_map[material] = []
+
+        if universe not in Entity.univ_cell_map:
+            Entity.univ_cell_map[universe] = []
+        
+        Entity.mat_cell_map[material].append(self)
+        Entity.univ_cell_map[universe].append(self)
 
         if not gmsh.is_initialized():
             gmsh.initialize()
@@ -22,10 +33,9 @@ class Entity:
         """ Calls the Gmsh api to store the intersection in self.mesh """
         # outtag = gmsh.model.occ.copy([(3,self.primIDs[0])])
         if len(self.region) == 1:
-            # print(self.primIDs[0])
             # replace save_id with the cheapest 3d mesh to create
             gmsh.model.occ.add_sphere(0,0,0,Prims.BOUNDING_VALUE,self.id)
-            # print(self.region[0])
+
             temp = gmsh.model.occ.copy(self.region[0])
             gmsh.model.occ.remove([(3,self.id)])
             gmsh.model.occ.intersect( temp ,[(3,0)],
@@ -34,7 +44,6 @@ class Entity:
                                         removeTool=False)
             return
         
-        # FIXME: creates additional geometry on every subsequent intersection call --> solution: only push copies of Prims
         self.tags = [(3,Prims.BOUNDING_BOX_TAG)]
         operation_stack = []
         operation_stack.append(gmsh.model.occ.copy(self.tags))
@@ -123,7 +132,21 @@ class Entity:
                 
             
         self.tags = operation_stack[0]
-        print(self.tags)
+        
+        
+        
+        return self.tags
+    
+    def fill(self, univ_id: int ):
+        intersects = [gmsh.model.occ.intersect(self.tags, cell.tags,
+                                               removeObject=False,
+                                               removeTool=False)[0]
+                      for cell in Entity.univ_cell_map[univ_id]]
+        self.tags = intersects[0]
+
+        for tags in intersects[1:]:
+            self.tags, __ = gmsh.model.occ.fuse(self.tags, tags,removeObject=False, removeTool=True)
+        
         
         # for id in self.primIDs:
         #     self.tags, __ = gmsh.model.occ.intersect(self.tags, [(3,id)], removeObject=False, removeTool=False)

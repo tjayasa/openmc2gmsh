@@ -1,0 +1,2 @@
+[console_scripts]
+OMC2Gmsh = Converter.__main__:main

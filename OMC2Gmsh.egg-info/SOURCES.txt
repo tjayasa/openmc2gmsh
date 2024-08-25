@@ -1,0 +1,11 @@
+setup.py
+Converter/Entity.py
+Converter/OMCParser.py
+Converter/Prims.py
+Converter/__init__.py
+Converter/__main__.py
+OMC2Gmsh.egg-info/PKG-INFO
+OMC2Gmsh.egg-info/SOURCES.txt
+OMC2Gmsh.egg-info/dependency_links.txt
+OMC2Gmsh.egg-info/entry_points.txt
+OMC2Gmsh.egg-info/top_level.txt
